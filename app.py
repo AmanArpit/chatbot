@@ -3,16 +3,16 @@ import requests
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+# ✅ Load environment variables
 load_dotenv()
 
-# API Keys
+# ✅ API Keys
 DID_API_KEY = os.getenv("DID_API_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
 app = Flask(__name__)
 
-# ✅ Home route to prevent 404 error
+# ✅ Home route
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({"message": "Welcome to the Human-like Chatbot!"})
@@ -21,26 +21,29 @@ def home():
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.json.get("message")
-
-    # Mock chatbot response
-    chatbot_response = f"You said: {user_input}"
+    if not user_input:
+        return jsonify({"error": "No message provided"}), 400
 
     # ➡️ Text-to-Speech (ElevenLabs)
-    tts_url = "https://api.elevenlabs.io/v1/text-to-speech"
+    tts_url = "https://api.elevenlabs.io/v1/text-to-speech/{YOUR_VOICE_ID}/stream"
     tts_headers = {
         "xi-api-key": ELEVENLABS_API_KEY,
         "Content-Type": "application/json"
     }
     tts_payload = {
-        "text": chatbot_response,
-        "voice": "Rachel"  # Choose your preferred voice
+        "text": user_input,
+        "voice_settings": {
+            "stability": 0.5,
+            "similarity_boost": 0.8
+        }
     }
+
     tts_response = requests.post(tts_url, json=tts_payload, headers=tts_headers)
 
     if tts_response.status_code != 200:
-        return jsonify({"error": "TTS API failed"}), 500
+        return jsonify({"error": "Failed to generate audio"}), 500
 
-    audio_url = tts_response.json().get("url")
+    audio_url = tts_response.json().get("audio_url")
 
     # ➡️ Talking Face (D-ID)
     did_url = "https://api.d-id.com/talks"
@@ -51,17 +54,16 @@ def chat():
     did_payload = {
         "script": {
             "type": "text",
-            "input": chatbot_response
+            "input": user_input
         },
-        "voice": {
-            "url": audio_url
-        }
+        "source_url": "https://d-id.com/example_face.jpg",   # Example face image
+        "voice_url": audio_url
     }
 
     did_response = requests.post(did_url, json=did_payload, headers=did_headers)
 
     if did_response.status_code != 200:
-        return jsonify({"error": "D-ID API failed"}), 500
+        return jsonify({"error": "Failed to generate face"}), 500
 
     face_url = did_response.json().get("result_url")
 
@@ -70,10 +72,7 @@ def chat():
         "audio_url": audio_url
     })
 
-
 # ✅ Run the app with 0.0.0.0 and a fixed port
 if __name__ == '__main__':
-    # Use environment variable PORT or default to 10000
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port, debug=True)
-
