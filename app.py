@@ -12,12 +12,12 @@ ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
 app = Flask(__name__)
 
-# ✅ Home route to avoid 404 error
+# ✅ Home route to prevent 404 error
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({"message": "Welcome to the Human-like Chatbot!"})
 
-# Chat route
+# ✅ Chat route
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.json.get("message")
@@ -71,5 +71,9 @@ def chat():
     })
 
 
+# ✅ Run the app with 0.0.0.0 and a fixed port
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use environment variable PORT or default to 10000
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port, debug=True)
+
