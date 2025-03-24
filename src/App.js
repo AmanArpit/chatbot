@@ -1,25 +1,40 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import axios from "axios";
 
-function App() {
+const App = () => {
+  const [message, setMessage] = useState("");
+  const [response, setResponse] = useState(null);
+
+  const handleSend = async () => {
+    const res = await axios.post("https://chatbot-lg9o.onrender.com", {
+      message: message,
+    });
+    setResponse(res.data);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <h1>Human-Like Chatbot</h1>
+      <input
+        type="text"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Type your message"
+      />
+      <button onClick={handleSend}>Send</button>
+
+      {response && (
+        <div>
+          <h2>Face Output:</h2>
+          <img src={response.face_url} alt="Face" width="400" />
+          <h2>Audio Output:</h2>
+          <audio controls src={response.audio_url}></audio>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default App;
+
+
